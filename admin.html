@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Demo Account Management</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0b0c0f; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        header { background: #141518; border-bottom: 1px solid #26282e; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 16px; }
+        main { max-width: 1100px; margin: 0 auto; padding: 18px; }
+        .card { background: #1c1d22; border: 1px solid #2a2c33; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+        input, button { border-radius: 8px; border: 1px solid #2e313b; padding: 10px 12px; font-size: 14px; }
+        input { background: #121316; color: #fff; }
+        button { cursor: pointer; font-weight: 700; }
+        .primary { background: #10b981; color: #fff; border: none; }
+        .warn { background: #e67e22; color: #fff; border: none; }
+        .danger { background: #e50914; color: #fff; border: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #2a2c33; vertical-align: top; }
+        .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .row-actions input { width: 90px; }
+        .hidden { display: none; }
+        .ok { color: #10b981; }
+        .off { color: #e50914; }
+        .muted { color: #9e9ea5; font-size: 12px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DEMO ACCOUNT MANAGEMENT</h1>
+        <a href="/" style="color:#8e8e93; text-decoration:none;">Back to game</a>
+    </header>
+    <main>
+        <div class="card" id="loginCard">
+            <h2>Administrator login</h2>
+            <p class="muted">Admin routes require authentication. Actions are written to the audit log.</p>
+            <input id="user" placeholder="Username"><br><br>
+            <input id="pass" type="password" placeholder="Password"><br><br>
+            <button class="primary" onclick="login()">Sign in</button>
+            <p class="muted" id="loginMsg"></p>
+        </div>
+
+        <div id="panel" class="hidden">
+            <div class="card">
+                <h2>Search demo accounts</h2>
+                <input id="q" placeholder="ID, username, or guest key" oninput="loadAccounts()">
+            </div>
+            <div class="card">
+                <h2>All demo accounts</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>User</th><th>Demo USD</th><th>Status</th><th>Created</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="acctBody"></tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Simulated deposits / history</h2>
+                <div id="txPanel" class="muted">Select View history on an account.</div>
+            </div>
+            <div class="card">
+                <h2>Audit log</h2>
+                <table>
+                    <thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script>
+        async function api(path, opts = {}) {
+            const res = await fetch(path, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                ...opts
+            });
+            const data = await res.json().catch(() => ({ ok: false, error: 'Bad response' }));
+            if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        async function login() {
+            try {
+                await api('/api/admin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: document.getElementById('user').value,
+                        password: document.getElementById('pass').value
+                    })
+                });
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('panel').classList.remove('hidden');
+                await refreshAll();
+            } catch (e) {
+                document.getElementById('loginMsg').innerText = e.message;
+            }
+        }
+
+        async function refreshAll() {
+            await loadAccounts();
+            await loadAudit();
+        }
+
+        async function loadAccounts() {
+            const q = document.getElementById('q').value;
+            const data = await api('/api/admin/demo-accounts?q=' + encodeURIComponent(q));
+            document.getElementById('acctBody').innerHTML = data.accounts.map(a => `
+                <tr>
+                    <td>${a.id}</td>
+                    <td>${a.username || 'guest'}<br><span class="muted">${a.guest_key || ''}</span></td>
+                    <td>$${Number(a.balance_usd).toFixed(2)}</td>
+                    <td class="${a.is_enabled ? 'ok' : 'off'}">${a.is_enabled ? 'Enabled' : 'Disabled'}</td>
+                    <td>${a.created_at.replace('T',' ').slice(0,19)}</td>
+                    <td>
+                        <div class="row-actions">
+                            <input id="amt-${a.id}" type="number" step="0.01" min="1" placeholder="USD">
+                            <button class="primary" onclick="act(${a.id}, 'credit')">Add</button>
+                            <button class="warn" onclick="act(${a.id}, 'debit')">Deduct</button>
+                            <button onclick="act(${a.id}, 'reset')">Reset</button>
+                            <button class="danger" onclick="act(${a.id}, 'toggle')">${a.is_enabled ? 'Disable' : 'Enable'}</button>
+                            <button onclick="viewTx(${a.id})">View history</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6">No demo accounts</td></tr>';
+        }
+
+        async function act(id, kind) {
+            const amt = document.getElementById('amt-' + id).value;
+            const body = JSON.stringify({ amount_usd: amt });
+            if (kind === 'credit') await api('/api/admin/demo-accounts/' + id + '/credit', { method: 'POST', body });
+            if (kind === 'debit') await api('/api/admin/demo-accounts/' + id + '/debit', { method: 'POST', body });
+            if (kind === 'reset') await api('/api/admin/demo-accounts/' + id + '/reset', { method: 'POST' });
+            if (kind === 'toggle') await api('/api/admin/demo-accounts/' + id + '/toggle', { method: 'POST' });
+            await refreshAll();
+            await viewTx(id);
+        }
+
+        async function viewTx(id) {
+            const data = await api('/api/admin/demo-accounts/' + id + '/transactions');
+            document.getElementById('txPanel').innerHTML = `
+                <p>Demo account #${id} — every row below is SIMULATED.</p>
+                <table>
+                    <thead><tr><th>Date</th><th>Type</th><th>Amount USD</th><th>Status</th><th>Note</th></tr></thead>
+                    <tbody>
+                        ${data.transactions.map(t => `<tr>
+                            <td>${t.created_at.replace('T',' ').slice(0,19)}</td>
+                            <td>${t.tx_type}</td>
+                            <td>$${Number(t.amount_usd).toFixed(2)}</td>
+                            <td class="ok">${t.status}</td>
+                            <td>${t.note || ''}</td>
+                        </tr>`).join('') || '<tr><td colspan="5">No simulated deposits</td></tr>'}
+                    </tbody>
+                </table>`;
+        }
+
+        async function loadAudit() {
+            const data = await api('/api/admin/audit');
+            document.getElementById('auditBody').innerHTML = data.entries.map(e => `
+                <tr>
+                    <td>${e.created_at.replace('T',' ').slice(0,19)}</td>
+                    <td>${e.admin_username}</td>
+                    <td>${e.action}</td>
+                    <td>${e.target || ''}</td>
+                    <td>${e.details || ''}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

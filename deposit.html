@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>Deposit | Aviator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; min-height: 100%; background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .mobile-shell { width: 100%; max-width: 420px; margin: 0 auto; min-height: 100dvh; background: #000; display: flex; flex-direction: column; }
+        .top-logo-bar { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #1a1a1a; }
+        .back-btn { color: #fff; text-decoration: none; padding: 4px; }
+        .account-switch { display: flex; background: #121316; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 2px; }
+        .acc-btn { border: none; background: none; color: #8e8e93; font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .acc-btn.active.demo-active { background: #10b981; color: #fff; }
+        .acc-btn.active.real-active { background: #ffd700; color: #000; }
+        .wrap { padding: 14px; }
+        .card { background: #1c1d22; border: 1px solid #2a2c33; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+        h1 { font-size: 18px; margin-bottom: 6px; }
+        .muted { color: #9e9ea5; font-size: 12px; line-height: 1.4; margin-bottom: 12px; }
+        .badge { display: inline-block; background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3); color: #10b981; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px; margin-bottom: 10px; }
+        .badge.real { background: rgba(255,215,0,.12); border-color: rgba(255,215,0,.35); color: #ffd700; }
+        label { display: block; font-size: 12px; color: #8e8e93; margin-bottom: 6px; }
+        input { width: 100%; background: #121316; border: 1px solid #2e313b; border-radius: 10px; color: #fff; padding: 12px; font-size: 16px; margin-bottom: 12px; }
+        .deposit-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(180deg, #00d000, #00b200); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .deposit-btn.real { background: linear-gradient(180deg, #ffd700, #c9a400); color: #000; }
+        .balance { font-size: 22px; font-weight: 800; color: #00b200; margin-bottom: 8px; }
+        .toast { display: none; background: #1c1d22; border: 1px solid #2a2c33; border-radius: 10px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid #2a2c33; }
+        th { color: #8e8e93; }
+        .sim { color: #10b981; font-weight: 800; }
+        .pend { color: #ffd700; font-weight: 800; }
+    </style>
+</head>
+<body>
+    <div class="mobile-shell">
+        <div class="top-logo-bar">
+            <a class="back-btn" href="/">← Game</a>
+            <div class="account-switch">
+                <button class="acc-btn" id="accBtnDemo" onclick="setMode('demo')">Demo</button>
+                <button class="acc-btn" id="accBtnReal" onclick="setMode('real')">Real</button>
+            </div>
+        </div>
+        <div class="wrap">
+            <div class="toast" id="toast"></div>
+            <div class="card">
+                <div class="badge" id="kindBadge">SIMULATED DEMO</div>
+                <h1 id="pageTitle">Demo Account Deposit</h1>
+                <div class="muted" id="pageNote">Demo deposits add practice USD only. They are marked SIMULATED and never credit a real account.</div>
+                <div class="balance" id="balanceDisplay">$0.00 USD</div>
+                <label for="amount">Amount (USD)</label>
+                <input id="amount" type="number" min="1" step="0.01" placeholder="10.00">
+                <button class="deposit-btn" id="submitBtn" onclick="submitDeposit()">Simulate Demo Deposit</button>
+            </div>
+            <div class="card">
+                <h1>Transaction history</h1>
+                <div class="muted" id="histNote">All demo rows are SIMULATED.</div>
+                <table>
+                    <thead><tr><th>Date</th><th>Type</th><th>USD</th><th>Status</th></tr></thead>
+                    <tbody id="txBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(location.search);
+        let mode = params.get('account') || localStorage.getItem('betrush_account_mode') || 'demo';
+
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.style.display = 'block';
+            el.innerText = msg;
+            setTimeout(() => { el.style.display = 'none'; }, 3500);
+        }
+
+        async function api(path, opts = {}) {
+            const res = await fetch(path, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                ...opts
+            });
+            const data = await res.json().catch(() => ({ ok: false, error: 'Bad response' }));
+            if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        function setMode(next) {
+            mode = next;
+            localStorage.setItem('betrush_account_mode', next);
+            render();
+            refresh();
+        }
+
+        function render() {
+            const demo = mode === 'demo';
+            document.getElementById('accBtnDemo').className = 'acc-btn' + (demo ? ' active demo-active' : '');
+            document.getElementById('accBtnReal').className = 'acc-btn' + (!demo ? ' active real-active' : '');
+            document.getElementById('kindBadge').className = 'badge' + (demo ? '' : ' real');
+            document.getElementById('kindBadge').innerText = demo ? 'SIMULATED DEMO' : 'REAL ACCOUNT';
+            document.getElementById('pageTitle').innerText = demo ? 'Demo Account Deposit' : 'Real Account Deposit';
+            document.getElementById('pageNote').innerText = demo
+                ? 'Demo deposits add practice USD only. They are marked SIMULATED and never credit a real account.'
+                : 'Real deposit requests are stored as PENDING. They are not treated as actual payments and never change demo balances.';
+            document.getElementById('submitBtn').innerText = demo ? 'Simulate Demo Deposit' : 'Submit Real Deposit Request';
+            document.getElementById('submitBtn').className = 'deposit-btn' + (demo ? '' : ' real');
+            document.getElementById('histNote').innerText = demo ? 'All demo rows are SIMULATED.' : 'Real requests stay pending until processed separately. They are not simulated as paid.';
+        }
+
+        async function refresh() {
+            await api('/api/demo/session', { method: 'POST' });
+            if (mode === 'demo') {
+                const bal = await api('/api/demo/balance');
+                document.getElementById('balanceDisplay').innerText = '$' + Number(bal.balance_usd).toFixed(2) + ' USD';
+                document.getElementById('balanceDisplay').style.color = '#00b200';
+                const txs = await api('/api/demo/transactions');
+                document.getElementById('txBody').innerHTML = txs.transactions.map(t =>
+                    `<tr><td>${t.created_at.replace('T',' ').slice(0,19)}</td><td>${t.tx_type}</td><td>$${Number(t.amount_usd).toFixed(2)}</td><td class="sim">${t.status}</td></tr>`
+                ).join('') || '<tr><td colspan="4">No simulated transactions yet</td></tr>';
+            } else {
+                const bal = await api('/api/real/balance');
+                document.getElementById('balanceDisplay').innerText = '$' + Number(bal.balance_usd).toFixed(2) + ' USD';
+                document.getElementById('balanceDisplay').style.color = '#ffd700';
+                document.getElementById('txBody').innerHTML = '<tr><td colspan="4">Pending real requests are stored on the server and never marked as SIMULATED payments.</td></tr>';
+            }
+        }
+
+        async function submitDeposit() {
+            const amount = document.getElementById('amount').value;
+            try {
+                if (mode === 'demo') {
+                    const data = await api('/api/demo/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount }) });
+                    toast('Successful demo deposit: $' + data.amount_usd + ' USD (SIMULATED). New demo balance $' + data.balance_usd);
+                } else {
+                    const data = await api('/api/real/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount }) });
+                    toast(data.message);
+                }
+                document.getElementById('amount').value = '';
+                await refresh();
+            } catch (e) {
+                toast(e.message);
+            }
+        }
+
+        render();
+        refresh().catch(err => toast(err.message));
+    </script>
+</body>
+</html>

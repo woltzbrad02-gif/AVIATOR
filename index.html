@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Aviator">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>CrashGame</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        html, body { overflow: hidden; position: fixed; width: 100%; height: 100%; touch-action: manipulation; background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .mobile-shell { height: 100dvh; overflow: hidden; width: 100%; max-width: 420px; margin: 0 auto; background: #000; display: flex; flex-direction: column; position: relative; }
+        .top-logo-bar { height: 52px; width: 100%; background: #000; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; flex-shrink: 0; border-bottom: 1px solid #1a1a1a; gap: 8px; }
+        .header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .back-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; padding: 4px; border-radius: 6px; transition: background 0.2s ease; flex-shrink: 0; }
+        .back-btn:active { background: rgba(255, 255, 255, 0.15); }
+        .back-btn svg { width: 22px; height: 22px; stroke: #ffffff; display: block; }
+        .top-logo-bar img.main-logo-top { height: 30px; object-fit: contain; flex-shrink: 0; }
+        .refer-btn { background: #ffd700; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; flex-shrink: 0; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3); }
+        .account-switch { display: flex; background: #121316; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 2px; gap: 2px; flex-shrink: 0; }
+        .acc-btn { border: none; background: none; color: #8e8e93; font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .acc-btn.active.demo-active { background: #10b981; color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .4); }
+        .acc-btn.active.real-active { background: #ffd700; color: #000; box-shadow: 0 2px 4px rgba(0, 0, 0, .4); }
+        .toast-container { position: absolute; top: 58px; left: 8px; right: 8px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+        header { background: #141518; padding: 3px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #26282e; flex-shrink: 0; height: 38px; }
+        .aviator-logo { height: 90px; width: 80px; object-fit: contain; display: block; }
+        .header-right-group { display: flex; align-items: center; gap: 10px; }
+        .balance-box { display: flex; align-items: baseline; gap: 4px; }
+        #balanceDisplay { color: #00b200; font-size: 14px; font-weight: 700; }
+        .currency-code-btn { background: none; border: none; color: #8b8d93; font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: 6px; display: flex; align-items: center; gap: 3px; }
+        .currency-code-btn:active { background: rgba(255, 255, 255, 0.1); }
+        .currency-code-btn svg { width: 10px; height: 10px; }
+        .menu-btn { background: none; border: none; padding: 0; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .menu-btn svg { width: 16px; height: 16px; }
+        .history-wrapper { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #000; }
+        .history-bar { flex: 1; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+        .history-bar::-webkit-scrollbar { display: none; }
+        .history-menu { width: 38px; height: 28px; border: none; border-radius: 14px; background: #2b2b2f; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+        .history-menu svg { width: 22px; height: 16px; }
+        .history-badge { padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; background: transparent; color: #3498db; }
+        .history-badge.purple { background: transparent; color: #8a42d6; }
+        .history-badge.red { background: transparent; color: #CC3FCF; }
+        .canvas-container { width: calc(100% - 12px); margin: 0 6px; height: 225px; position: relative; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid #26282e; flex-shrink: 0; }
+        canvas { width: 100%; height: 100%; display: block; }
+        .multiplier-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .status-subtext { font-size: 17px; color: #fff; text-transform: uppercase; font-weight: 800; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8); }
+        .multiplier-text { font-size: 46px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9); }
+        .waiting-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .waiting-overlay .waiting-ui { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 200px; }
+        .waiting-overlay .waiting-ui .main-logo { width: 100%; height: 82px; object-fit: contain; display: block; }
+        .waiting-overlay .waiting-ui .extra-img { width: 100%; height: 75px; object-fit: contain; display: block; margin-top: 2px; }
+        .waiting-overlay .progress { width: 100%; height: 4px; background: #222; border-radius: 3px; overflow: hidden; }
+        .waiting-overlay .progressFill { height: 100%; background: #e50914; width: 100%; border-radius: 3px; transition: width 0.1s linear; }
+        .waiting-overlay .status-subtext { font-size: 10px; margin-top: 2px; white-space: nowrap; width: 100%; text-align: center; color: #fff; font-weight: 700; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); display: none; }
+        .live-counter-overlay { position: absolute; bottom: 6px; right: 10px; display: flex; align-items: center; gap: 5px; background: rgba(18, 19, 22, 0.75); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); z-index: 10; }
+        .avatars-group { display: flex; }
+        .avatars-group img { width: 20px; height: 20px; border-radius: 50%; margin-right: -4px; border: 1px solid #000; }
+        .live-count-text { font-size: 10px; color: #aaa; font-weight: 600; }
+        .step-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+        .step-btn:active { transform: scale(0.98); }
+        .controls-stack { display: flex; flex-direction: column; gap: 8px; padding: 4px 6px; flex: 1; }
+        .bet-panel { background: linear-gradient(180deg, #1f2128, #17181c); border: 1px solid #26282e; border-radius: 12px; padding: 3px; display: flex; flex-direction: column; gap: 9px; position: relative; flex: 1; min-height: 2px; }
+        .segmented-tabs { display: flex; background: #121316; border-radius: 14px; padding: 1px; width: 180px; margin: 0 auto; border: 1px solid rgba(255, 255, 255, 0.05); height: 40px; }
+        .seg-btn { flex: 1; background: none; border: none; color: #8e8e93; font-size: 11px; font-weight: 500; border-radius: 12px; height: 26px; line-height: 26px; padding: 0 4px; }
+        .seg-btn.active { background: #32353e; color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); }
+        .panel-content { display: flex; gap: 5px; align-items: stretch; height: 100%; }
+        .amount-side { flex: 1; display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+        .stepper-box { display: flex; align-items: center; justify-content: space-between; background: #121316; border-radius: 14px; padding: 2px 5px; border: 1px solid #26282e; height: 34px; }
+        .step-btn { width: 22px; height: 22px; border-radius: 50%; background: #32353e; border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .amount-value-input { width: 70px; background: none; border: none; color: #fff; text-align: center; font-size: 13px; font-weight: 600; outline: none; pointer-events: auto; user-select: auto; -webkit-user-select: auto; }
+        .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+        .q-chip { background: #1a1b20; border: 1px solid #26282e; color: #ccc; padding: 2px; border-radius: 8px; font-size: 11px; font-weight: 700; text-align: center; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .q-chip:active { background: #2b2c34; }
+        .btn-bet-main { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; flex: 1; height: 100%; min-height: 11px; border-radius: 12px; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; background: linear-gradient(180deg, #00d000, #00b200 55%, #009900); border: 1px solid rgba(0, 178, 0, 0.18); min-width: 200px; transition: background 0.15s ease; }
+        .btn-bet-main .title { font-size: 18px; font-weight: 500; text-transform: uppercase; line-height: 1.1; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+        .btn-bet-main .sub { font-size: 15px; font-weight: 500; letter-spacing: 0.2px; opacity: 0.95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .bottom-bets-card { margin: 0 6px 6px; background: #1b1c20; border-radius: 12px; border: 1px solid #26282e; padding: 2px; flex-shrink: 0; }
+        .bets-info-card { background: #121316; border: 1px solid rgba(255, 255, 255, .05); border-radius: 10px; padding: 8px; margin-top: 6px; }
+        .bets-stats-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .bets-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+        .bets-count { color: #8e8e93; font-size: 13px; font-weight: 400; line-height: 1; }
+        .bets-count span { color: #fff; font-size: 13px; font-weight: 400; }
+        .bets-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+        .win-value { color: #fff; font-size: 13px; font-weight: 700; line-height: 1; }
+        .win-label { color: #8e8e93; font-size: 13px; font-weight: 400; line-height: 1; }
+        .bets-progress { width: 100%; height: 6px; background: #2a2b2f; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .bets-progress-fill { height: 100%; width: 100%; background: #00b200; border-radius: 10px; transition: width .4s ease; }
+        .bottom-tabs { display: flex; background: #121316; border-radius: 12px; padding: 2px; margin-bottom: 6px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .b-tab { flex: 1; background: none; border: none; color: #8e8e93; font-size: 12px; font-weight: 600; padding: 4px 0; border-radius: 10px; text-align: center; }
+        .b-tab.active { background: #32353e; border: 1px solid rgba(255, 255, 255, 0.05); color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .4); }
+        .popup-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, .85); z-index: 99999; justify-content: center; align-items: center; }
+        .popup-box { position: relative; width: 90%; max-width: 360px; background: #1c1d22; border-radius: 16px; border: 1px solid #2a2c33; overflow: hidden; animation: modalIn .2s ease-out; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); text-align: center; padding: 20px 18px; }
+        @keyframes modalIn { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-close-x { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: #282a30; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #a0a0a0; cursor: pointer; font-weight: bold; font-size: 14px; z-index: 2; }
+        .modal-icon-wrap { width: 48px; height: 48px; background: rgba(0, 242, 254, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; }
+        .modal-icon-wrap svg { width: 24px; height: 24px; stroke: #00f2fe; }
+        .popup-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .popup-text { font-size: 12px; color: #9e9ea5; margin-bottom: 14px; line-height: 1.4; text-align: left; }
+        .currency-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; max-height: 320px; overflow-y: auto; margin-bottom: 6px; padding: 2px; }
+        .cur-btn { background: #121316; border: 1px solid #2e313b; border-radius: 10px; color: #ccc; font-size: 12px; font-weight: 700; padding: 10px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .cur-btn .cur-sym { font-size: 14px; color: #00f2fe; }
+        .cur-btn .cur-code { font-size: 10px; color: #8e8e93; }
+        .cur-btn.selected { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #fff; }
+        .cur-btn:active { background: #2b2c34; }
+        .cur-rate-note { font-size: 10px; color: #8e8e93; text-align: center; margin-top: 4px; line-height: 1.4; }
+        .payout-tag-hero { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 8px; margin-bottom: 12px; display: inline-block; }
+        .referral-link-box { background: #111215; border: 1px solid #2e313b; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 10px; }
+        .referral-url { font-size: 11px; color: #00f2fe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: left; font-weight: 600; }
+        .copy-btn { background: linear-gradient(135deg, #00f2fe, #4facfe); color: #050811; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; flex-shrink: 0; text-transform: uppercase; }
+        .referral-stats { display: flex; justify-content: space-around; background: #121316; border: 1px solid #2e313b; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+        .stat-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .stat-val { font-size: 15px; font-weight: 800; color: #10b981; }
+        .stat-lbl { font-size: 10px; color: #8e8e93; text-transform: uppercase; margin-top: 2px; }
+        .referral-steps { background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 10px 12px; text-align: left; font-size: 11px; color: #ccc; line-height: 1.5; }
+        .referral-steps ul { list-style: none; padding: 0; margin-top: 6px; }
+        .referral-steps li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 6px; }
+        .referral-steps li svg { flex-shrink: 0; margin-top: 2px; }
+        .deposit-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(180deg, #00d000, #00b200); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(0, 178, 0, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="mobile-shell" id="appShell">
+        <div class="top-logo-bar">
+            <div class="header-left">
+                <a href="/dashboard/" class="back-btn" aria-label="Back to Dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </a>
+                <img src="https://i.ibb.co/5WS8kMsY/4-F05-AFF4-AFC8-4-B60-9-F59-086-D08-FA8723.png" alt="BetRush Logo" class="main-logo-top">
+            </div>
+            <div style="display:flex; gap:6px; flex-shrink:0; align-items:center;">
+                <div class="account-switch" id="accountSwitch">
+                    <button class="acc-btn active demo-active" id="accBtnDemo" onclick="switchAccount('demo')">Demo</button>
+                    <button class="acc-btn" id="accBtnReal" onclick="switchAccount('real')">Real</button>
+                </div>
+                <button class="refer-btn" onclick="openReferralModal()">Refer</button>
+            </div>
+        </div>
+        <div class="toast-container" id="toastContainer"></div>
+        <header>
+            <img src="https://i.ibb.co/Kp4064jY/881-E1908-9-A39-4575-9-AD3-BD30-F0-D557-D9.png" class="aviator-logo" alt="Aviator">
+            <div class="header-right-group">
+                <div class="balance-box">
+                    <span id="balanceDisplay">100.00</span>
+                    <button class="currency-code-btn" id="currencyCodeDisplay" onclick="openCurrencyModal()">USD
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#8b8d93" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
+                <button class="menu-btn" id="menuBtn" onclick="resetDemoBalance()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#8b8d93" stroke-width="2.2" stroke-linecap="round">
+                        <line x1="4" y1="7" x2="20" y2="7"/>
+                        <line x1="4" y1="12" x2="20" y2="12"/>
+                        <line x1="4" y1="17" x2="20" y2="17"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+        <div class="history-wrapper">
+            <div class="history-bar" id="historyBar"></div>
+            <button class="history-menu">
+                <svg viewBox="0 0 24 24" fill="#b6b6b6">
+                    <circle cx="6" cy="12" r="1.7"/>
+                    <circle cx="12" cy="12" r="1.7"/>
+                    <circle cx="18" cy="12" r="1.7"/>
+                </svg>
+            </button>
+        </div>
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="gameCanvas"></canvas>
+            <div class="waiting-overlay" id="waitingOverlay">
+                <div class="waiting-ui">
+                    <img src="https://i.ibb.co/1f4JbyKq/2-D7407-D5-8-F90-4-EA4-AAD8-DD7005940859.jpg" alt="Aviator Logo" class="main-logo">
+                    <div class="progress"><div class="progressFill" id="pFill"></div></div>
+                    <div class="status-subtext" id="waitingText"></div>
+                    <img src="https://i.ibb.co/NdF87qWh/BA7-FCCD6-2-A03-40-F5-853-D-FBBF74-F5-D7-E1.png" class="extra-img" alt="Aviator extra">
+                </div>
+            </div>
+            <div class="multiplier-overlay" id="multiplierOverlay" style="pointer-events:none; display:none;">
+                <div class="status-subtext" id="statusSubtext"></div>
+                <div class="multiplier-text" id="multiplierText">1.00x</div>
+            </div>
+            <div class="live-counter-overlay">
+                <div class="avatars-group"><img src="https://i.pravatar.cc/30?img=1" alt="u"><img src="https://i.pravatar.cc/30?img=2" alt="u"><img src="https://i.pravatar.cc/30?img=3" alt="u"></div>
+                <span class="live-count-text" id="livePlayerCount">7</span>
+            </div>
+        </div>
+        <div class="controls-stack">
+            <div class="bet-panel">
+                <div class="segmented-tabs"><button class="seg-btn active">Bet</button><button class="seg-btn">Auto</button></div>
+                <div class="panel-content">
+                    <div class="amount-side">
+                        <div class="stepper-box">
+                            <button class="step-btn" onclick="adjustBet(1, -1)">−</button>
+                            <input type="text" class="amount-value-input" id="betVal1" value="$2.00" onfocus="handleInputFocus(1)" onblur="handleInputBlur(1)" oninput="handleBetInput(1)">
+                            <button class="step-btn" onclick="adjustBet(1, 1)">+</button>
+                        </div>
+                        <div class="quick-grid">
+                            <div class="q-chip" onclick="handleQuickChip(1, 10)">10</div>
+                            <div class="q-chip" onclick="handleQuickChip(1, 20)">20</div>
+                            <div class="q-chip" onclick="handleQuickChip(1, 50)">50</div>
+                            <div class="q-chip" onclick="handleQuickChip(1, 100)">100</div>
+                        </div>
+                    </div>
+                    <button class="btn-bet-main" id="btn1" onclick="handleBetClick(1)">
+                        <span class="title" id="title1">Bet</span>
+                        <span class="sub" id="sub1">$2.00 USD</span>
+                    </button>
+                </div>
+            </div>
+            <div class="bet-panel">
+                <div class="segmented-tabs"><button class="seg-btn active">Bet</button><button class="seg-btn">Auto</button></div>
+                <div class="panel-content">
+                    <div class="amount-side">
+                        <div class="stepper-box">
+                            <button class="step-btn" onclick="adjustBet(2, -1)">−</button>
+                            <input type="text" class="amount-value-input" id="betVal2" value="$2.00" onfocus="handleInputFocus(2)" onblur="handleInputBlur(2)" oninput="handleBetInput(2)">
+                            <button class="step-btn" onclick="adjustBet(2, 1)">+</button>
+                        </div>
+                        <div class="quick-grid">
+                            <div class="q-chip" onclick="handleQuickChip(2, 10)">10</div>
+                            <div class="q-chip" onclick="handleQuickChip(2, 20)">20</div>
+                            <div class="q-chip" onclick="handleQuickChip(2, 50)">50</div>
+                            <div class="q-chip" onclick="handleQuickChip(2, 100)">100</div>
+                        </div>
+                    </div>
+                    <button class="btn-bet-main" id="btn2" onclick="handleBetClick(2)">
+                        <span class="title" id="title2">Bet</span>
+                        <span class="sub" id="sub2">$2.00 USD</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-bets-card">
+            <div class="bottom-tabs">
+                <button class="b-tab active">All Bets</button>
+                <button class="b-tab">Previous</button>
+                <button class="b-tab">Top</button>
+            </div>
+            <div class="bets-info-card">
+                <div class="bets-stats-row">
+                    <div class="bets-left">
+                        <div class="avatars-group">
+                            <img src="https://i.pravatar.cc/30?img=1" alt="u">
+                            <img src="https://i.pravatar.cc/30?img=2" alt="u">
+                            <img src="https://i.pravatar.cc/30?img=3" alt="u">
+                        </div>
+                        <div class="bets-count"><span id="totalBetsStat">7/7</span> Bets</div>
+                    </div>
+                    <div class="bets-right">
+                        <div class="win-value" id="totalWinStat">$0.00</div>
+                        <div class="win-label" id="winLabelText">Total win USD</div>
+                    </div>
+                </div>
+                <div class="bets-progress"><div class="bets-progress-fill" id="betsProgressFill"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-modal" id="currencyModal">
+        <div class="popup-box">
+            <div class="modal-close-x" onclick="closeModal('currencyModal')">✕</div>
+            <div class="modal-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M8 10h8M8 14h8"></path></svg>
+            </div>
+            <div class="popup-title">Select Currency</div>
+            <div class="currency-grid" id="currencyGrid"></div>
+            <div class="cur-rate-note">Balances convert at equivalent rates (e.g. 1 USD = 129 KES). Demo ledger is stored in USD on the server.</div>
+        </div>
+    </div>
+
+    <div class="popup-modal" id="depositModal">
+        <div class="popup-box">
+            <div class="modal-close-x" onclick="closeModal('depositModal')">✕</div>
+            <div class="modal-icon-wrap" style="background: rgba(229, 9, 20, 0.15);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e50914" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <div class="popup-title">Insufficient Balance</div>
+            <div class="popup-text" style="text-align: center;">You do not have enough funds to place this bet. Switch to Demo for practice balance, or make a deposit to continue.</div>
+            <button class="deposit-btn" onclick="handleDepositRedirect()">Deposit Now</button>
+        </div>
+    </div>
+
+    <div class="popup-modal" id="referralModal">
+        <div class="popup-box">
+            <div class="modal-close-x" onclick="closeModal('referralModal')">✕</div>
+            <div class="modal-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+            </div>
+            <div class="popup-title">Refer &amp; Earn</div>
+            <div class="payout-tag-hero" id="referralPayoutTag">$3.00 USD per qualified referral</div>
+            <div class="referral-link-box">
+                <span class="referral-url" id="referralUrlText">https://betrush.site/register</span>
+                <button class="copy-btn" id="copyLinkBtn" onclick="copyReferralLink()">Copy Link</button>
+            </div>
+            <div class="referral-stats">
+                <div class="stat-item"><span class="stat-val" id="refQualVal">0</span><span class="stat-lbl">Qualified Referrals</span></div>
+                <div class="stat-item"><span class="stat-val" id="refEarningsVal">$0.00</span><span class="stat-lbl">Earned</span></div>
+            </div>
+            <div class="referral-steps">
+                <strong style="color: #fff;">Program Guidelines:</strong>
+                <ul>
+                    <li><span>Earn <strong id="guidelineRateText">$3.00 USD</strong> for every qualified referral.</span></li>
+                    <li><span>A <strong>Qualified Referral</strong> is someone who registers via your link and completes their <strong>first deposit</strong>.</span></li>
+                    <li><span><strong>Strictly Prohibited:</strong> Self-referrals, fake accounts, or duplicate registrations from the same device/IP are strictly banned and will forfeit all earnings.</span></li>
+                    <li><span>Referral count and total amount earned will only display after your referral completes their first deposit.</span></li>
+                    <li><span>Earnings can be <strong>withdrawn immediately</strong> without having to play the Aviator game first.</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('dblclick', e => e.preventDefault());
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) e.preventDefault();
+        }, { passive: false });
+
+        const CURRENCIES = {
+            USD: { symbol: '$', rate: 1, name: 'US Dollar' },
+            EUR: { symbol: '€', rate: 0.92, name: 'Euro' },
+            GBP: { symbol: '£', rate: 0.79, name: 'British Pound' },
+            NGN: { symbol: '₦', rate: 1600, name: 'Nigerian Naira' },
+            ZAR: { symbol: 'R', rate: 18.2, name: 'South African Rand' },
+            KES: { symbol: 'KSh', rate: 129, name: 'Kenyan Shilling' },
+            UGX: { symbol: 'USh', rate: 3700, name: 'Ugandan Shilling' },
+            GHS: { symbol: 'GH₵', rate: 15.5, name: 'Ghanaian Cedi' },
+            ZWG: { symbol: 'ZiG', rate: 26, name: 'Zimbabwe Gold' },
+            TZS: { symbol: 'TSh', rate: 2600, name: 'Tanzanian Shilling' },
+            ZMW: { symbol: 'ZK', rate: 27, name: 'Zambian Kwacha' },
+            BWP: { symbol: 'P', rate: 13.7, name: 'Botswana Pula' },
+            MZN: { symbol: 'MT', rate: 64, name: 'Mozambican Metical' },
+            ETB: { symbol: 'Br', rate: 120, name: 'Ethiopian Birr' },
+            CDF: { symbol: 'FC', rate: 2850, name: 'Congolese Franc' },
+            RWF: { symbol: 'FRw', rate: 1300, name: 'Rwandan Franc' },
+            XOF: { symbol: 'CFA', rate: 610, name: 'West African CFA' },
+            INR: { symbol: '₹', rate: 85, name: 'Indian Rupee' },
+            PKR: { symbol: '₨', rate: 278, name: 'Pakistani Rupee' },
+            BDT: { symbol: '৳', rate: 120, name: 'Bangladeshi Taka' },
+            PHP: { symbol: '₱', rate: 58, name: 'Philippine Peso' },
+            CNY: { symbol: '¥', rate: 7.1, name: 'Chinese Yuan' },
+            JPY: { symbol: '¥', rate: 150, name: 'Japanese Yen' }
+        };
+
+        let userCurrencyCode = localStorage.getItem('cachedCurrencyCode') || 'USD';
+        let userCurrencySymbol = CURRENCIES[userCurrencyCode] ? CURRENCIES[userCurrencyCode].symbol : '$';
+
+        function getRate(code) { return (CURRENCIES[code] || CURRENCIES.USD).rate; }
+        function getSymbol(code) { return (CURRENCIES[code] || CURRENCIES.USD).symbol; }
+        function toUsd(localAmount) { return localAmount / getRate(userCurrencyCode); }
+        function fromUsd(usdAmount) { return parseFloat(usdAmount) * getRate(userCurrencyCode); }
+        function formatMoney(amount) {
+            const c = CURRENCIES[userCurrencyCode] || CURRENCIES.USD;
+            const decimals = c.rate >= 100 ? 0 : 2;
+            return userCurrencySymbol + Number(amount).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        }
+
+        async function api(path, opts = {}) {
+            const res = await fetch(path, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                ...opts
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        function openCurrencyModal() {
+            renderCurrencyGrid();
+            document.getElementById('currencyModal').style.display = 'flex';
+        }
+        function renderCurrencyGrid() {
+            const grid = document.getElementById('currencyGrid');
+            grid.innerHTML = '';
+            Object.keys(CURRENCIES).forEach(code => {
+                const c = CURRENCIES[code];
+                const btn = document.createElement('button');
+                btn.className = 'cur-btn' + (code === userCurrencyCode ? ' selected' : '');
+                btn.innerHTML = `<span class="cur-sym">${c.symbol}</span><span>${code}</span><span class="cur-code">${c.name}</span>`;
+                btn.onclick = () => selectCurrency(code);
+                grid.appendChild(btn);
+            });
+        }
+        function selectCurrency(code) {
+            if (!CURRENCIES[code] || code === userCurrencyCode) { closeModal('currencyModal'); return; }
+            userCurrencyCode = code;
+            localStorage.setItem('cachedCurrencyCode', code);
+            closeModal('currencyModal');
+            loadBalance();
+            updateCurrencyUI();
+            showToast(`Currency: ${code} — display converted; demo ledger stays USD`);
+        }
+        function updateCurrencyUI() {
+            userCurrencySymbol = getSymbol(userCurrencyCode);
+            const currCodeEl = document.getElementById("currencyCodeDisplay");
+            if (currCodeEl) currCodeEl.childNodes[0].nodeValue = userCurrencyCode + ' ';
+            const winLabelEl = document.getElementById("winLabelText");
+            if (winLabelEl) winLabelEl.innerText = `Total win ${userCurrencyCode}`;
+            updateBalanceUI();
+            updateBetDisplay(1);
+            updateBetDisplay(2);
+            updateBetButton(1);
+            updateBetButton(2);
+            initReferralSystem();
+        }
+
+        const DEMO_BALANCE_USD = 100.00;
+        const DEMO_BALANCE_KEY = 'betrush_demo_balance_v2';
+        const REAL_BALANCE_KEY = 'betrush_real_balance_v2';
+        const BALANCE_VERSION = '2';
+        let accountMode = localStorage.getItem('betrush_account_mode') || 'demo';
+        let userBalance = 0.00;
+
+        (function migrateBalances() {
+            if (localStorage.getItem('betrush_balance_version') !== BALANCE_VERSION) {
+                localStorage.removeItem('betrush_demo_balance');
+                localStorage.removeItem('betrush_real_balance');
+                localStorage.setItem('betrush_balance_version', BALANCE_VERSION);
+            }
+        })();
+
+        function getBalanceKey() { return accountMode === 'demo' ? DEMO_BALANCE_KEY : REAL_BALANCE_KEY; }
+
+        async function ensureDemoSession() {
+            try { await api('/api/demo/session', { method: 'POST' }); } catch (e) {}
+        }
+
+        async function loadBalance() {
+            if (accountMode === 'demo') {
+                try {
+                    const data = await api('/api/demo/balance');
+                    userBalance = fromUsd(data.balance_usd);
+                    localStorage.setItem(DEMO_BALANCE_KEY, userBalance.toFixed(2));
+                } catch (e) {
+                    const saved = localStorage.getItem(DEMO_BALANCE_KEY);
+                    userBalance = (saved !== null && !isNaN(parseFloat(saved))) ? parseFloat(saved) : DEMO_BALANCE_USD * getRate(userCurrencyCode);
+                }
+            } else {
+                try {
+                    const data = await api('/api/real/balance');
+                    userBalance = fromUsd(data.balance_usd);
+                    localStorage.setItem(REAL_BALANCE_KEY, userBalance.toFixed(2));
+                } catch (e) {
+                    const saved = localStorage.getItem(REAL_BALANCE_KEY);
+                    userBalance = (saved !== null && !isNaN(parseFloat(saved))) ? parseFloat(saved) : 0.00;
+                }
+            }
+            updateBalanceUI();
+        }
+
+        function saveBalance() {
+            localStorage.setItem(getBalanceKey(), userBalance.toFixed(2));
+            updateBalanceUI();
+        }
+
+        async function switchAccount(mode) {
+            if (mode === accountMode) return;
+            accountMode = mode;
+            localStorage.setItem('betrush_account_mode', mode);
+            bets[1].placed = false;
+            bets[2].placed = false;
+            updateBetButton(1);
+            updateBetButton(2);
+            await loadBalance();
+            renderAccountSwitch();
+            showToast(mode === 'demo' ? 'Switched to DEMO — simulated USD ledger' : 'Switched to REAL account');
+        }
+
+        function renderAccountSwitch() {
+            const demoBtn = document.getElementById('accBtnDemo');
+            const realBtn = document.getElementById('accBtnReal');
+            demoBtn.classList.toggle('active', accountMode === 'demo');
+            realBtn.classList.toggle('active', accountMode === 'real');
+            demoBtn.classList.toggle('demo-active', accountMode === 'demo');
+            realBtn.classList.toggle('real-active', accountMode === 'real');
+        }
+
+        async function resetDemoBalance() {
+            if (accountMode === 'demo') {
+                try {
+                    const data = await api('/api/demo/reset', { method: 'POST' });
+                    userBalance = fromUsd(data.balance_usd);
+                    saveBalance();
+                    showToast(`Demo balance reset to ${formatMoney(userBalance)} ($100 USD equivalent) — SIMULATED`);
+                } catch (e) { showToast(e.message); }
+            } else {
+                showInsufficientFundsModal();
+            }
+        }
+
+        function updateBalanceUI() {
+            const el = document.getElementById("balanceDisplay");
+            if (el) {
+                el.innerText = formatMoney(userBalance);
+                el.style.color = accountMode === 'demo' ? '#00b200' : '#ffd700';
+            }
+        }
+
+        function showToast(msg) {
+            const c = document.getElementById('toastContainer');
+            if (!c) return;
+            const t = document.createElement('div');
+            t.style.cssText = 'background:#1c1d22;border:1px solid #2a2c33;border-radius:10px;padding:8px 12px;font-size:12px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:auto';
+            t.innerText = msg;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        let bets = { 1: { placed: false }, 2: { placed: false } };
+        function handleBetClick(panel) {
+            if (bets[panel].placed) cashOut(panel);
+            else placeBet(panel);
+        }
+
+        async function placeBet(panel) {
+            const amt = betAmounts[panel];
+            if (gameState !== STATES.WAITING) {
+                showToast('Wait for the next round to place a bet');
+                return;
+            }
+            if (accountMode === 'demo') {
+                try {
+                    const data = await api('/api/demo/wager', { method: 'POST', body: JSON.stringify({ amount_usd: toUsd(amt).toFixed(2) }) });
+                    userBalance = fromUsd(data.balance_usd);
+                    saveBalance();
+                    bets[panel].placed = true;
+                    updateBetButton(panel);
+                    showToast(`Bet placed: ${formatMoney(amt)} (SIMULATED)`);
+                } catch (e) {
+                    showToast(e.message || 'Not enough demo balance — press ☰ to reset');
+                }
+                return;
+            }
+            if (amt > userBalance) {
+                showInsufficientFundsModal();
+                return;
+            }
+            userBalance -= amt;
+            saveBalance();
+            bets[panel].placed = true;
+            updateBetButton(panel);
+            showToast(`Bet placed: ${formatMoney(amt)}`);
+        }
+
+        async function cashOut(panel) {
+            const b = bets[panel];
+            if (!b.placed || gameState !== STATES.FLYING) return;
+            const win = betAmounts[panel] * currentMultiplier;
+            if (accountMode === 'demo') {
+                try {
+                    const data = await api('/api/demo/payout', { method: 'POST', body: JSON.stringify({ amount_usd: toUsd(win).toFixed(2) }) });
+                    userBalance = fromUsd(data.balance_usd);
+                    saveBalance();
+                    showToast(`Cashed out at ${currentMultiplier.toFixed(2)}x — won ${formatMoney(win)} (SIMULATED)`);
+                } catch (e) {
+                    showToast(e.message);
+                    return;
+                }
+            } else {
+                userBalance += win;
+                saveBalance();
+                showToast(`Cashed out at ${currentMultiplier.toFixed(2)}x — won ${formatMoney(win)}`);
+            }
+            b.placed = false;
+            updateBetButton(panel);
+        }
+
+        function loseActiveBets() {
+            [1, 2].forEach(p => {
+                if (bets[p].placed) {
+                    showToast(`Bet ${p} lost — plane flew at ${crashPoint.toFixed(2)}x`);
+                    bets[p].placed = false;
+                    updateBetButton(p);
+                }
+            });
+        }
+
+        function updateBetButton(panel) {
+            const b = bets[panel];
+            const btn = document.getElementById('btn' + panel);
+            const title = document.getElementById('title' + panel);
+            if (!btn || !title) return;
+            if (b.placed) {
+                btn.style.background = 'linear-gradient(180deg, #e67e22, #d35400)';
+                title.innerText = 'CASH OUT';
+            } else {
+                btn.style.background = 'linear-gradient(180deg, #00d000, #00b200 55%, #009900)';
+                title.innerText = 'Bet';
+            }
+            updateSubText(panel);
+        }
+        function updateSubText(panel) {
+            const sub = document.getElementById('sub' + panel);
+            if (!sub) return;
+            if (bets[panel].placed && gameState === STATES.FLYING) {
+                sub.innerText = formatMoney(betAmounts[panel] * currentMultiplier);
+            } else {
+                sub.innerText = `${formatMoney(betAmounts[panel])} ${userCurrencyCode}`;
+            }
+        }
+
+        const AUTO_SIGNAL_ENABLED = true;
+        let lastSentRound = null;
+        async function sendTelegramSignal(signalText) {
+            try {
+                await fetch('/api/signals/telegram', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: signalText })
+                });
+            } catch (e) {}
+        }
+        setInterval(() => {
+            if (!AUTO_SIGNAL_ENABLED) return;
+            if (typeof gameState === 'undefined' || gameState !== STATES.WAITING) return;
+            const round = getCurrentClockRound();
+            if (lastSentRound === round) return;
+            lastSentRound = round;
+            sendTelegramSignal(getClockCrashPoint(round).toFixed(2) + 'x');
+        }, 1000);
+
+        function getOrCreateUserRefCode() {
+            let userCode = localStorage.getItem('betrush_session') || localStorage.getItem('userReferralCode');
+            if (!userCode) {
+                userCode = 'User_' + Math.floor(100000 + Math.random() * 900000);
+                localStorage.setItem('userReferralCode', userCode);
+            }
+            return userCode;
+        }
+        function handleIncomingReferral() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const incomingRef = urlParams.get('ref') || urlParams.get('referred_by');
+            if (incomingRef) localStorage.setItem('referredByCode', incomingRef);
+        }
+        function initReferralSystem() {
+            handleIncomingReferral();
+            const myCode = getOrCreateUserRefCode();
+            const refUrl = `https://betrush.site/register?ref=${encodeURIComponent(myCode)}`;
+            const urlEl = document.getElementById('referralUrlText');
+            if (urlEl) urlEl.innerText = refUrl;
+            const qualCount = parseInt(localStorage.getItem('refQualCount') || '0', 10);
+            const rewardLocal = 3.00 * getRate(userCurrencyCode);
+            const tagEl = document.getElementById('referralPayoutTag');
+            if (tagEl) tagEl.innerText = `${formatMoney(rewardLocal)} ${userCurrencyCode} per qualified referral ($3.00 USD)`;
+            const guidelineRateEl = document.getElementById('guidelineRateText');
+            if (guidelineRateEl) guidelineRateEl.innerText = userCurrencyCode === 'USD' ? '$3.00 USD' : `${formatMoney(rewardLocal)} ${userCurrencyCode} ($3.00 USD)`;
+            const qualEl = document.getElementById('refQualVal');
+            const earnEl = document.getElementById('refEarningsVal');
+            if (qualEl) qualEl.innerText = qualCount;
+            if (earnEl) earnEl.innerText = formatMoney(qualCount * rewardLocal);
+        }
+        function copyReferralLink() {
+            const urlText = document.getElementById('referralUrlText').innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(urlText).then(() => showCopySuccess()).catch(() => fallbackCopy(urlText));
+            } else fallbackCopy(urlText);
+        }
+        function fallbackCopy(text) {
+            const input = document.createElement('textarea');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showCopySuccess();
+        }
+        function showCopySuccess() {
+            const btn = document.getElementById('copyLinkBtn');
+            btn.innerText = 'Copied!';
+            setTimeout(() => { btn.innerText = 'Copy Link'; }, 2000);
+        }
+        function handleDepositRedirect() {
+            const referredBy = localStorage.getItem('referredByCode');
+            let depositUrl = '/deposit.html?account=' + encodeURIComponent(accountMode);
+            if (referredBy) depositUrl += `&referred_by=${encodeURIComponent(referredBy)}`;
+            window.location.href = depositUrl;
+        }
+
+        const avatarPool = [];
+        for (let i = 1; i <= 30; i++) avatarPool.push(`https://aviator-demo.spribegaming.com/assets/static/avatars/v2/av-${i}.png?v=4.2.98`);
+        function shuffleAvatars() {
+            document.querySelectorAll(".avatars-group").forEach(group => {
+                const used = new Set();
+                group.querySelectorAll("img").forEach(img => {
+                    let index;
+                    do { index = Math.floor(Math.random() * avatarPool.length); } while (used.has(index));
+                    used.add(index);
+                    img.src = avatarPool[index];
+                });
+            });
+        }
+        function pseudoRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+        function getClockCrashPoint(roundIndex) {
+            let rand1 = pseudoRandom(roundIndex * 3 + 1);
+            let rand2 = pseudoRandom(roundIndex * 3 + 2);
+            if (rand1 < 0.01) return 1000.00;
+            if (roundIndex % 10 === 4) return parseFloat((15.00 + rand2 * (43.89 - 15.00)).toFixed(2));
+            if ((roundIndex % 10) < 5) return parseFloat((1.12 + rand2 * (3.28 - 1.12)).toFixed(2));
+            let formatted = parseFloat((1.01 + Math.pow(rand2, 3) * 14.0).toFixed(2));
+            if (formatted % 1 === 0) formatted += 0.08;
+            return formatted;
+        }
+
+        let betAmounts = { 1: 2.00, 2: 2.00 };
+        let lastQuickChipClicked = { 1: null, 2: null };
+        function updateBetDisplay(panel) {
+            const input = document.getElementById(`betVal${panel}`);
+            if (document.activeElement !== input) input.value = formatMoney(betAmounts[panel]);
+            updateSubText(panel);
+        }
+        function adjustBet(panel, delta) {
+            betAmounts[panel] = Math.max(1.00, parseFloat((betAmounts[panel] + delta).toFixed(2)));
+            lastQuickChipClicked[panel] = null;
+            updateBetDisplay(panel);
+        }
+        function handleInputFocus(panel) {
+            document.getElementById(`betVal${panel}`).value = betAmounts[panel].toFixed(2);
+        }
+        function handleInputBlur(panel) {
+            const input = document.getElementById(`betVal${panel}`);
+            let val = parseFloat(input.value.replace(/[^0-9.]/g, ''));
+            if (isNaN(val) || val < 1.00) val = 1.00;
+            betAmounts[panel] = parseFloat(val.toFixed(2));
+            lastQuickChipClicked[panel] = null;
+            updateBetDisplay(panel);
+        }
+        function handleBetInput(panel) {
+            let val = parseFloat(document.getElementById(`betVal${panel}`).value.replace(/[^0-9.]/g, ''));
+            if (!isNaN(val) && val >= 0) {
+                betAmounts[panel] = parseFloat(val.toFixed(2));
+                updateSubText(panel);
+            }
+        }
+        function handleQuickChip(panel, amount) {
+            if (lastQuickChipClicked[panel] === amount) betAmounts[panel] = parseFloat((betAmounts[panel] + amount).toFixed(2));
+            else { betAmounts[panel] = parseFloat(amount.toFixed(2)); lastQuickChipClicked[panel] = amount; }
+            updateBetDisplay(panel);
+        }
+        function showInsufficientFundsModal() { document.getElementById('depositModal').style.display = 'flex'; }
+        function openReferralModal() { document.getElementById('referralModal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        const STATES = { WAITING: 'WAITING', FLYING: 'FLYING', CRASHED: 'CRASHED' };
+        let gameState = STATES.WAITING;
+        let currentMultiplier = 1.00;
+        let crashPoint = 1.00;
+        let crashTimeMs = 0;
+        let startTime = 0;
+        let currentPlayers = 7;
+        let maxRoundPlayers = 7;
+        let currentTotalWin = 0.00;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const overlayMult = document.getElementById('multiplierText');
+        const overlaySub = document.getElementById('statusSubtext');
+        const overlayContainer = document.getElementById('multiplierOverlay');
+        const waitingOverlay = document.getElementById('waitingOverlay');
+        const progressFill = document.getElementById('pFill');
+        const waitingText = document.getElementById('waitingText');
+        const historyBar = document.getElementById('historyBar');
+        const livePlayerCountEl = document.getElementById('livePlayerCount');
+        const totalBetsStatEl = document.getElementById('totalBetsStat');
+        const totalWinStatEl = document.getElementById('totalWinStat');
+        const betsProgressFill = document.getElementById('betsProgressFill');
+        let flyAwayActive = false;
+        let flyAwayStart = 0;
+        let flyAwayMult = 1.0;
+        let waitingInterval = null;
+        const planeImage = new Image();
+        planeImage.src = "https://i.ibb.co/k6SB718C/6-ECC7-F74-EC08-4120-8-FBE-6428-C071-A5-CD.png";
+        function resizeCanvas() { canvas.width = container.clientWidth; canvas.height = container.clientHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        function drawBackground() {
+            const w = canvas.width, h = canvas.height;
+            const bgGrad = ctx.createRadialGradient(w * 0.2, h * 0.8, 5, w * 0.5, h * 0.5, w);
+            bgGrad.addColorStop(0, '#1c0a12');
+            bgGrad.addColorStop(0.4, '#0d0e12');
+            bgGrad.addColorStop(1, '#050507');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+            ctx.save();
+            ctx.translate(-w * 0.15, h * 1.15);
+            for (let i = 0; i < 28; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                const a1 = (-Math.PI / 2.6) + (i * Math.PI / 28);
+                ctx.arc(0, 0, w * 2.1, a1, a1 + (Math.PI / 28) * 0.55);
+                ctx.closePath();
+                ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.020)" : "rgba(255,255,255,0.006)";
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        function getCurrentClockRound() { return Math.floor(Date.now() / 15000); }
+        function startWaitingPhase() {
+            shuffleAvatars();
+            gameState = STATES.WAITING;
+            currentMultiplier = 1.00;
+            currentTotalWin = 0.00;
+            flyAwayActive = false;
+            currentPlayers = Math.max(7, currentPlayers);
+            maxRoundPlayers = currentPlayers;
+            waitingOverlay.style.display = 'flex';
+            overlayContainer.style.display = 'none';
+            waitingText.innerText = "";
+            waitingText.style.display = "none";
+            let duration = 4000, elapsed = 0, step = 50;
+            if (waitingInterval) clearInterval(waitingInterval);
+            waitingInterval = setInterval(() => {
+                elapsed += step;
+                if (progressFill) progressFill.style.width = Math.max(0, 100 - (elapsed / duration) * 100) + "%";
+                if (elapsed >= duration) { clearInterval(waitingInterval); startFlightPhase(); }
+            }, step);
+            if (progressFill) progressFill.style.width = "100%";
+            updateBetButton(1);
+            updateBetButton(2);
+        }
+        function startFlightPhase() {
+            gameState = STATES.FLYING;
+            crashPoint = getClockCrashPoint(getCurrentClockRound());
+            crashTimeMs = Math.log(crashPoint) / 0.065 * 1000;
+            startTime = performance.now();
+            flyAwayActive = false;
+            waitingOverlay.style.display = 'none';
+            overlayContainer.style.display = 'flex';
+            overlaySub.innerText = '';
+            overlayMult.innerText = '1.00x';
+            overlayMult.style.color = '#fff';
+            maxRoundPlayers = currentPlayers;
+            requestAnimationFrame(gameLoop);
+        }
+        function gameLoop(time) {
+            if (flyAwayActive) {
+                const elapsed = (time - flyAwayStart) / 1000;
+                if (elapsed > 1.2) { flyAwayActive = false; ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+                drawScene(elapsed, true);
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            if (gameState !== STATES.FLYING) return;
+            const elapsedMs = time - startTime;
+            if (elapsedMs >= crashTimeMs) { currentMultiplier = crashPoint; triggerCrash(time); return; }
+            currentMultiplier = Math.exp(0.065 * (elapsedMs / 1000));
+            overlayMult.innerText = currentMultiplier.toFixed(2) + "x";
+            updateSubText(1);
+            updateSubText(2);
+            drawScene(elapsedMs / 1000, false);
+            requestAnimationFrame(gameLoop);
+        }
+        function triggerCrash(time) {
+            gameState = STATES.CRASHED;
+            flyAwayActive = true;
+            flyAwayStart = time;
+            flyAwayMult = currentMultiplier;
+            overlaySub.innerText = 'FLEW AWAY';
+            overlaySub.style.color = '#fff';
+            overlayMult.innerText = currentMultiplier.toFixed(2) + 'x';
+            overlayMult.style.color = '#e50914';
+            addHistoryBadge(currentMultiplier);
+            loseActiveBets();
+            requestAnimationFrame(gameLoop);
+            setTimeout(() => { flyAwayActive = false; startWaitingPhase(); }, 1500);
+        }
+        function drawScene(elapsed, isFlyAway) {
+            drawBackground();
+            const w = canvas.width, h = canvas.height;
+            if (isFlyAway) {
+                const progress = Math.min(elapsed / 1.2, 1);
+                const cx = w * 0.82 + (w * 1.4 - w * 0.82) * progress;
+                const cy = h * 0.28 + (-h * 0.3 - h * 0.28) * progress;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, 1 - progress * 0.5);
+                ctx.translate(cx, cy);
+                ctx.rotate(-Math.PI / 16);
+                if (planeImage.complete && planeImage.naturalWidth) {
+                    const size = 90 * Math.max(0.3, 1 - progress * 0.7);
+                    ctx.drawImage(planeImage, -size / 2, -size / 2, size, size);
+                }
+                ctx.restore();
+                return;
+            }
+            if (gameState !== STATES.FLYING) return;
+            const progress = Math.min(elapsed / 7, 1);
+            const currentX = (w * 0.82) * progress;
+            const currentY = h - (h * 0.72) * Math.pow(progress, 1.2);
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            ctx.quadraticCurveTo(currentX * 0.35, h, currentX, currentY);
+            ctx.lineTo(currentX, h);
+            ctx.closePath();
+            const areaGrad = ctx.createLinearGradient(0, 0, 0, h);
+            areaGrad.addColorStop(0, 'rgba(229,9,20,0.45)');
+            areaGrad.addColorStop(1, 'rgba(229,9,20,0.0)');
+            ctx.fillStyle = areaGrad;
+            ctx.fill();
+            ctx.save();
+            ctx.shadowColor = '#e50914';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            ctx.quadraticCurveTo(currentX * 0.35, h, currentX, currentY);
+            ctx.strokeStyle = "#e50914";
+            ctx.lineWidth = 3.5;
+            ctx.stroke();
+            ctx.restore();
+            ctx.save();
+            ctx.translate(currentX, currentY);
+            ctx.rotate(-Math.PI / 16);
+            if (planeImage.complete && planeImage.naturalWidth) ctx.drawImage(planeImage, -55, -55, 110, 110);
+            ctx.restore();
+        }
+        setInterval(() => {
+            if (gameState === STATES.WAITING) {
+                if (currentPlayers < 7) currentPlayers = 7;
+                const target = 1300 + Math.floor(Math.random() * 301);
+                if (currentPlayers < target) {
+                    let step;
+                    if (currentPlayers < 100) step = Math.floor(Math.random() * 12) + 5;
+                    else if (currentPlayers < 500) step = Math.floor(Math.random() * 35) + 20;
+                    else if (currentPlayers < 1000) step = Math.floor(Math.random() * 60) + 40;
+                    else step = Math.floor(Math.random() * 30) + 15;
+                    currentPlayers = Math.min(currentPlayers + step, target);
+                }
+                maxRoundPlayers = currentPlayers;
+            } else if (gameState === STATES.FLYING) {
+                let drop;
+                if (currentMultiplier < 2) drop = Math.floor(Math.random() * 8) + 2;
+                else if (currentMultiplier < 5) drop = Math.floor(Math.random() * 12) + 5;
+                else if (currentMultiplier < 10) drop = Math.floor(Math.random() * 20) + 10;
+                else drop = Math.floor(Math.random() * 35) + 20;
+                currentPlayers = Math.max(currentPlayers - drop, 0);
+                currentTotalWin += Math.random() * 3000 + 1000;
+            }
+            livePlayerCountEl.innerText = currentPlayers.toLocaleString();
+            totalBetsStatEl.innerText = `${currentPlayers}/${maxRoundPlayers}`;
+            totalWinStatEl.innerText = formatMoney(currentTotalWin);
+            betsProgressFill.style.width = (maxRoundPlayers > 0 ? (currentPlayers / maxRoundPlayers) * 100 : 0) + "%";
+        }, 1000);
+        function addHistoryBadge(mult) {
+            const badge = document.createElement('div');
+            let cls = 'blue';
+            if (mult >= 10.0) cls = 'red';
+            else if (mult >= 2.0) cls = 'purple';
+            badge.className = `history-badge ${cls}`;
+            badge.innerText = mult.toFixed(2) + 'x';
+            historyBar.prepend(badge);
+            if (historyBar.children.length > 15) historyBar.removeChild(historyBar.lastChild);
+        }
+        function initRecentHistory() {
+            historyBar.innerHTML = "";
+            let currentRound = getCurrentClockRound();
+            for (let i = 8; i >= 1; i--) {
+                let val = getClockCrashPoint(currentRound - i);
+                let cls = "blue";
+                if (val >= 10) cls = "red";
+                else if (val >= 2) cls = "purple";
+                historyBar.innerHTML += `<div class="history-badge ${cls}">${val.toFixed(2)}x</div>`;
+            }
+        }
+
+        ensureDemoSession().then(() => loadBalance());
+        renderAccountSwitch();
+        updateCurrencyUI();
+        updateBetButton(1);
+        updateBetButton(2);
+        initRecentHistory();
+        waitingOverlay.style.display = "flex";
+        waitingText.innerText = "";
+        waitingText.style.display = "none";
+        progressFill.style.width = "0%";
+        shuffleAvatars();
+        startWaitingPhase();
+    </script>
+</body>
+</html>
