@@ -229,8 +229,15 @@ def index_page():
 @app.route("/deposit.html")
 @app.route("/public/deposit")
 @app.route("/deposit")
+@app.route("/public/deposit/index.html")
 def deposit_page():
     return send_from_directory(BASE_DIR, "deposit.html")
+
+
+@app.route("/mpesa.html")
+@app.route("/public/deposit/mpesa.html")
+def mpesa_page():
+    return send_from_directory(BASE_DIR, "mpesa.html")
 
 
 @app.route("/admin.html")
@@ -389,6 +396,52 @@ def real_deposit():
             "account_kind": "REAL",
         }
     )
+
+
+@app.post("/api/payhero/stk-push")
+def payhero_stk_push():
+    data = request.get_json(silent=True) or {}
+    if (data.get("account") or localStorage_mode()) == "demo":
+        return jsonify(
+            {
+                "success": False,
+                "ok": False,
+                "message": "M-Pesa STK is a real payment path. It cannot credit demo balances. Use a SIMULATED demo deposit instead.",
+            }
+        ), 400
+    amount = parse_deposit_amount(data.get("amount") or data.get("amount_usd"))
+    phone = "".join(ch for ch in str(data.get("phone_number") or "") if ch.isdigit())
+    if not phone:
+        return jsonify({"success": False, "ok": False, "message": "Phone number required"}), 400
+    db = get_db()
+    account = get_or_create_real_account(db)
+    note = f"M-Pesa STK request for {phone} — pending, not a confirmed payment"
+    if amount is not None:
+        db.execute(
+            """INSERT INTO real_transactions (real_account_id, amount_usd, tx_type, status, note, created_at)
+               VALUES (?, ?, 'MPESA_STK_REQUEST', 'PENDING', ?, ?)""",
+            (account["id"], str(amount), note, utcnow()),
+        )
+        db.commit()
+    if not os.getenv("PAYHERO_API_KEY"):
+        return jsonify(
+            {
+                "success": False,
+                "ok": False,
+                "message": "PayHero is not configured on the server. The request was stored as PENDING and did not credit any balance.",
+            }
+        ), 503
+    return jsonify(
+        {
+            "success": True,
+            "ok": True,
+            "message": "STK request accepted for processing. Balance is not credited until a real callback confirms payment.",
+        }
+    )
+
+
+def localStorage_mode():
+    return (request.get_json(silent=True) or {}).get("account_mode") or "real"
 
 
 @app.get("/api/demo/transactions")

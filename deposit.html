@@ -2,149 +2,335 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <title>Deposit | Aviator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CrashGame -- Secure Deposits Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Outfit:wght@400;600;800;900&amp;display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        html, body { width: 100%; min-height: 100%; background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .mobile-shell { width: 100%; max-width: 420px; margin: 0 auto; min-height: 100dvh; background: #000; display: flex; flex-direction: column; }
-        .top-logo-bar { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #1a1a1a; }
-        .back-btn { color: #fff; text-decoration: none; padding: 4px; }
-        .account-switch { display: flex; background: #121316; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 2px; }
-        .acc-btn { border: none; background: none; color: #8e8e93; font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+         :root {
+            --bg-base: #0b0e14;
+            --bg-surface: #131924;
+            --bg-card: #1a2232;
+            --bg-input: #0e131d;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-green: #10b981;
+            --accent-glow: rgba(0, 242, 254, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #8492a6;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(0, 242, 254, 0.5);
+            --error-red: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; touch-action: manipulation; }
+        body { background-color: var(--bg-base); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+        header { background: rgba(19, 25, 36, 0.85); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-glass); padding: 16px 32px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 10; }
+        .back-link { color: var(--accent-cyan); text-decoration: none; font-weight: 800; font-size: 13px; position: absolute; left: 20px; }
+        .nav-logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 900; color: #fff; text-decoration: none; }
+        .nav-logo img { height: 32px; width: auto; filter: drop-shadow(0 0 8px var(--accent-glow)); }
+        .account-switch { position: absolute; right: 16px; display: flex; gap: 4px; }
+        .acc-btn { border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-muted); font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
         .acc-btn.active.demo-active { background: #10b981; color: #fff; }
         .acc-btn.active.real-active { background: #ffd700; color: #000; }
-        .wrap { padding: 14px; }
-        .card { background: #1c1d22; border: 1px solid #2a2c33; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-        h1 { font-size: 18px; margin-bottom: 6px; }
-        .muted { color: #9e9ea5; font-size: 12px; line-height: 1.4; margin-bottom: 12px; }
-        .badge { display: inline-block; background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3); color: #10b981; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 8px; margin-bottom: 10px; }
-        .badge.real { background: rgba(255,215,0,.12); border-color: rgba(255,215,0,.35); color: #ffd700; }
-        label { display: block; font-size: 12px; color: #8e8e93; margin-bottom: 6px; }
-        input { width: 100%; background: #121316; border: 1px solid #2e313b; border-radius: 10px; color: #fff; padding: 12px; font-size: 16px; margin-bottom: 12px; }
-        .deposit-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(180deg, #00d000, #00b200); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-        .deposit-btn.real { background: linear-gradient(180deg, #ffd700, #c9a400); color: #000; }
-        .balance { font-size: 22px; font-weight: 800; color: #00b200; margin-bottom: 8px; }
-        .toast { display: none; background: #1c1d22; border: 1px solid #2a2c33; border-radius: 10px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid #2a2c33; }
-        th { color: #8e8e93; }
-        .sim { color: #10b981; font-weight: 800; }
-        .pend { color: #ffd700; font-weight: 800; }
+        .main-wrapper { flex: 1; width: 100%; max-width: 600px; margin: 0 auto; padding: 24px 16px; position: relative; }
+        .viewport { width: 100%; overflow: hidden; position: relative; }
+        .slider-track { display: flex; width: 200%; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .step-panel { width: 50%; flex-shrink: 0; padding: 0 8px; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 6px; text-align: center; }
+        p.subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; text-align: center; }
+        .methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .method-card { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; }
+        .method-icon { height: 28px; display: flex; align-items: center; justify-content: center; }
+        .method-icon img, .method-icon svg { height: 28px; width: 28px; object-fit: contain; }
+        .method-name { font-size: 12px; font-weight: 800; color: #fff; text-align: center; }
+        .method-sub { font-size: 10px; font-weight: 600; color: var(--text-muted); text-align: center; }
+        .support-banner { background: rgba(19, 25, 36, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+        .support-info { display: flex; align-items: center; gap: 10px; }
+        .telegram-icon-wrapper { width: 32px; height: 32px; background: rgba(0, 136, 204, 0.15); border: 1px solid rgba(0, 136, 204, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .telegram-icon-wrapper img { width: 16px; height: 16px; object-fit: contain; }
+        .support-title { font-size: 12px; font-weight: 700; color: #fff; }
+        .support-sub { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+        .support-btn { background: #0088cc; color: #fff; text-decoration: none; font-size: 11px; font-weight: 800; padding: 8px 12px; border-radius: 8px; }
+        .demo-card { background: var(--bg-card); border: 1px solid rgba(16,185,129,.4); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .demo-card h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent-green); }
+        .demo-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+        .input-field { width: 100%; padding: 14px 16px; background: var(--bg-input); border: 1px solid var(--border-glass); border-radius: 12px; color: var(--text-main); font-size: 14px; font-weight: 600; outline: none; }
+        .btn-submit { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #050811; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+        .step-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .btn-back-step { background: rgba(255,255,255,.05); border: 1px solid var(--border-glass); color: var(--accent-cyan); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .payment-box { background: var(--bg-input); border: 1px solid var(--border-glass); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; }
+        .qr-code { width: 150px; height: 150px; margin: 14px auto; display: block; border-radius: 12px; background: #fff; padding: 8px; }
+        .address-container { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-card); padding: 10px 14px; border-radius: 10px; font-size: 12px; margin-top: 10px; }
+        .address-text { font-family: monospace; font-size: 11px; word-break: break-all; color: #a1a1aa; }
+        .copy-btn { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; padding: 8px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; color: #050811; font-size: 11px; flex-shrink: 0; }
+        .input-group { margin-bottom: 16px; text-align: left; }
+        .input-group label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .input-note { display: block; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+        .validation-error { color: var(--error-red); font-size: 11px; font-weight: 700; margin-top: 6px; display: none; }
+        .file-upload-wrapper { position: relative; background: var(--bg-input); border: 2px dashed var(--border-glass); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; }
+        .file-upload-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(7,10,15,.85); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        .modal-content { background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px; width: 100%; max-width: 440px; text-align: center; max-height: 90vh; overflow-y: auto; }
+        .network-btn { width: 100%; background: var(--bg-card); border: 1px solid var(--border-glass); color: var(--text-main); padding: 14px; border-radius: 12px; font-weight: 700; margin-bottom: 10px; cursor: pointer; }
+        .method-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--border-glass); padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; }
+        .method-row-info { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 700; color: #fff; }
+        .method-logo-wrapper { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--accent-cyan); overflow: hidden; flex-shrink: 0; }
+        .method-logo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .buy-now-btn { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #050811; text-decoration: none; font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 6px; }
+        .tx-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        .tx-table th, .tx-table td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border-glass); }
+        .sim { color: var(--accent-green); font-weight: 800; }
+        .toast { display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border-glass); font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="mobile-shell">
-        <div class="top-logo-bar">
-            <a class="back-btn" href="/">← Game</a>
-            <div class="account-switch">
-                <button class="acc-btn" id="accBtnDemo" onclick="setMode('demo')">Demo</button>
-                <button class="acc-btn" id="accBtnReal" onclick="setMode('real')">Real</button>
-            </div>
+    <header>
+        <a href="/" class="back-link">&larr; Lobby</a>
+        <a href="/" class="nav-logo">
+            <img src="https://i.ibb.co/5WS8kMsY/4-F05-AFF4-AFC8-4-B60-9-F59-086-D08-FA8723.png" alt="BetRush" /> CrashGame
+        </a>
+        <div class="account-switch">
+            <button class="acc-btn" id="accBtnDemo" onclick="setMode('demo')">Demo</button>
+            <button class="acc-btn" id="accBtnReal" onclick="setMode('real')">Real</button>
         </div>
-        <div class="wrap">
-            <div class="toast" id="toast"></div>
-            <div class="card">
-                <div class="badge" id="kindBadge">SIMULATED DEMO</div>
-                <h1 id="pageTitle">Demo Account Deposit</h1>
-                <div class="muted" id="pageNote">Demo deposits add practice USD only. They are marked SIMULATED and never credit a real account.</div>
-                <div class="balance" id="balanceDisplay">$0.00 USD</div>
-                <label for="amount">Amount (USD)</label>
-                <input id="amount" type="number" min="1" step="0.01" placeholder="10.00">
-                <button class="deposit-btn" id="submitBtn" onclick="submitDeposit()">Simulate Demo Deposit</button>
-            </div>
-            <div class="card">
-                <h1>Transaction history</h1>
-                <div class="muted" id="histNote">All demo rows are SIMULATED.</div>
-                <table>
-                    <thead><tr><th>Date</th><th>Type</th><th>USD</th><th>Status</th></tr></thead>
-                    <tbody id="txBody"></tbody>
-                </table>
+    </header>
+    <div class="main-wrapper">
+        <div class="toast" id="toast"></div>
+        <div class="viewport">
+            <div class="slider-track" id="sliderTrack">
+                <div class="step-panel">
+                    <h2>Deposit Gateway</h2>
+                    <p class="subtitle" id="gatewaySubtitle">Choose your payment provider to proceed.</p>
+                    <div class="demo-card" id="demoCard">
+                        <h3>SIMULATED Demo USD</h3>
+                        <p>This credits only the demo ledger. It is never a real payment and never updates a real balance. Current demo: <strong id="demoBal">$0.00</strong></p>
+                        <input class="input-field" id="demoAmount" type="number" min="1" step="0.01" placeholder="Amount in USD">
+                        <button type="button" class="btn-submit" onclick="simulateDemoDeposit()">Simulate Demo Deposit</button>
+                        <table class="tx-table">
+                            <thead><tr><th>Date</th><th>Type</th><th>USD</th><th>Status</th></tr></thead>
+                            <tbody id="demoTxBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="methods-grid">
+                        <div class="method-card" onclick="selectMethod('gram')">
+                            <div class="method-icon"><img src="https://cdn-icons-png.flaticon.com/128/15301/15301814.png" alt="GRAM" /></div>
+                            <div class="method-name">GRAM</div>
+                            <div class="method-sub">TON Network</div>
+                        </div>
+                        <div class="method-card" onclick="selectMethod('ott')">
+                            <div class="method-icon"><img src="https://i.ibb.co/HLbQY3Zw/9-B9-A192-B-F051-45-BA-B5-B0-2994-EA7-B7-EF2.png" alt="OTT Voucher" /></div>
+                            <div class="method-name">OTT Voucher</div>
+                            <div class="method-sub">Prepaid</div>
+                        </div>
+                        <div class="method-card" onclick="selectMethod('bitcoin')">
+                            <div class="method-icon"><img src="https://cdn-icons-png.flaticon.com/128/15301/15301521.png" alt="Bitcoin" /></div>
+                            <div class="method-name">Bitcoin</div>
+                            <div class="method-sub">BTC Chain</div>
+                        </div>
+                        <div class="method-card" onclick="openUsdtModal()">
+                            <div class="method-icon"><img src="https://cdn-icons-png.flaticon.com/128/15301/15301795.png" alt="USDT" /></div>
+                            <div class="method-name">USDT</div>
+                            <div class="method-sub">TRC20 / BEP20</div>
+                        </div>
+                        <a href="mpesa.html" class="method-card">
+                            <div class="method-icon"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK9btJTu-287FCOeK5xFZVt1cnFQnnBpQhG6pPrIry4Q&s=10" alt="M-Pesa" /></div>
+                            <div class="method-name">M-Pesa</div>
+                            <div class="method-sub">Deposit via M-Pesa</div>
+                        </a>
+                        <div class="method-card" onclick="openOthersModal()">
+                            <div class="method-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                            </div>
+                            <div class="method-name">Others</div>
+                            <div class="method-sub">See More</div>
+                        </div>
+                    </div>
+                    <div class="support-banner">
+                        <div class="support-info">
+                            <div class="telegram-icon-wrapper"><img src="https://cdn-icons-png.flaticon.com/128/2111/2111646.png" alt="Telegram" /></div>
+                            <div>
+                                <span class="support-title">Can't find your method?</span><br>
+                                <span class="support-sub">Contact Customer Support</span>
+                            </div>
+                        </div>
+                        <a href="https://t.me/crashgamesHelp" target="_blank" class="support-btn">Contact</a>
+                    </div>
+                </div>
+                <div class="step-panel">
+                    <div class="step-header">
+                        <button class="btn-back-step" onclick="goToStep(1)">&larr; Change Method</button>
+                        <span id="stepTitle" style="font-weight:800; font-size: 13px; color: var(--accent-cyan);">DETAILS</span>
+                    </div>
+                    <form id="depositForm">
+                        <div class="payment-box" id="paymentBox">
+                            <p id="instructionText" style="font-size: 12px; font-weight: 700; color: #fff;"></p>
+                            <img id="qrImage" class="qr-code" src="#" alt="QR Code" style="display:none;">
+                            <div id="addressWrapper" class="address-container" style="display:none;">
+                                <span id="addressText" class="address-text"></span>
+                                <button type="button" class="copy-btn" onclick="copyAddress()">Copy</button>
+                            </div>
+                        </div>
+                        <div class="input-group" id="amountGroup">
+                            <label id="minAmountLabel" for="depositAmount">Deposit Amount</label>
+                            <input type="number" id="depositAmount" class="input-field" placeholder="0.00" step="any">
+                            <span class="validation-error" id="amountError"></span>
+                        </div>
+                        <div class="input-group" id="voucherGroup" style="display:none;">
+                            <label id="voucherLabel" for="voucherCode">Voucher PIN Code(s)</label>
+                            <input type="text" id="voucherCode" class="input-field" placeholder="Enter PIN code(s)">
+                            <label for="voucherAmount" style="margin-top: 12px;">Total Voucher Value (ZAR)</label>
+                            <input type="number" id="voucherAmount" class="input-field" placeholder="Minimum R200 total value" step="any">
+                            <span class="input-note"><strong>Note:</strong> Minimum total deposit for vouchers is <strong>R200 ZAR</strong>.</span>
+                        </div>
+                        <div class="input-group" id="proofGroup">
+                            <label>Payment Proof</label>
+                            <div class="file-upload-wrapper">
+                                <span id="fileNameDisplay" style="font-size:12px; color: var(--text-muted); font-weight: 600;">Choose image or screenshot...</span>
+                                <input type="file" id="proofFile" class="file-upload-input" accept="image/*,.pdf" onchange="handleFileSelect(this)">
+                            </div>
+                        </div>
+                        <button type="submit" id="submitBtn" class="btn-submit">CONFIRM DEPOSIT</button>
+                    </form>
+                    <div class="support-banner">
+                        <div class="support-info">
+                            <div class="telegram-icon-wrapper"><img src="https://cdn-icons-png.flaticon.com/128/2111/2111646.png" alt="Telegram" /></div>
+                            <div>
+                                <span class="support-title">Need help with your payment?</span><br>
+                                <span class="support-sub">Contact Customer Support instantly</span>
+                            </div>
+                        </div>
+                        <a href="https://t.me/crashgamesHelp" target="_blank" class="support-btn">Support</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <div id="usdtNetworkModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom:16px; font-size:18px;">Select USDT Network</h3>
+            <button type="button" class="network-btn" onclick="selectUsdtNetwork('usdt_trc20')">TRC20 (Tron)</button>
+            <button type="button" class="network-btn" onclick="selectUsdtNetwork('usdt_bep20')">BEP20 (Binance Smart Chain)</button>
+            <button type="button" class="btn-back-step" style="width:100%; margin-top:8px;" onclick="closeUsdtModal()">Cancel</button>
+        </div>
+    </div>
+    <div id="othersModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 8px; font-size: 18px;">More Payment Methods</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">Select your preferred payment method to deposit directly.</p>
+            <div id="othersList"></div>
+            <button type="button" class="btn-back-step" style="width:100%; margin-top:16px;" onclick="closeOthersModal()">Close</button>
+        </div>
+    </div>
     <script>
-        const params = new URLSearchParams(location.search);
-        let mode = params.get('account') || localStorage.getItem('betrush_account_mode') || 'demo';
+        const walletAddresses = {
+            usdt_trc20: "TPYGBYu8vGES7mHkJAeLNuJC1Qc9uABkHL",
+            bitcoin: "1E68VaKSaC1mWxQE4qBGdh1n2w29hvyovw",
+            gram: "UQB91vR2KPJE-cPRIDluucP7Yz40bnEdbYsrflDabCeeeo8g"
+        };
+        const others = ["Opay","Wave","Airtm","Bkash","Gcash","Mpesa","Nagad","Paytm","Skrill","PhonePe","JazzCash","Redotpay","Telebirr","Easypaisa","Airtel Money","South Africa Bank","Orange Money","Turkey IBAN","MTN Mobile Money"];
+        let accountMode = localStorage.getItem('betrush_account_mode') || 'demo';
+        let currentMethod = '';
 
         function toast(msg) {
             const el = document.getElementById('toast');
             el.style.display = 'block';
             el.innerText = msg;
-            setTimeout(() => { el.style.display = 'none'; }, 3500);
+            setTimeout(() => el.style.display = 'none', 4000);
         }
-
         async function api(path, opts = {}) {
-            const res = await fetch(path, {
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                ...opts
-            });
-            const data = await res.json().catch(() => ({ ok: false, error: 'Bad response' }));
+            const res = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+            const data = await res.json().catch(() => ({}));
             if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
             return data;
         }
-
-        function setMode(next) {
-            mode = next;
-            localStorage.setItem('betrush_account_mode', next);
-            render();
-            refresh();
+        function setMode(mode) {
+            accountMode = mode;
+            localStorage.setItem('betrush_account_mode', mode);
+            document.getElementById('accBtnDemo').className = 'acc-btn' + (mode === 'demo' ? ' active demo-active' : '');
+            document.getElementById('accBtnReal').className = 'acc-btn' + (mode === 'real' ? ' active real-active' : '');
+            document.getElementById('demoCard').style.display = mode === 'demo' ? 'block' : 'none';
+            document.getElementById('gatewaySubtitle').innerText = mode === 'demo'
+                ? 'Demo uses SIMULATED USD. Crypto/M-Pesa methods stay available for Real and never credit demo.'
+                : 'Choose your payment provider to proceed.';
+            if (mode === 'demo') loadDemo();
         }
-
-        function render() {
-            const demo = mode === 'demo';
-            document.getElementById('accBtnDemo').className = 'acc-btn' + (demo ? ' active demo-active' : '');
-            document.getElementById('accBtnReal').className = 'acc-btn' + (!demo ? ' active real-active' : '');
-            document.getElementById('kindBadge').className = 'badge' + (demo ? '' : ' real');
-            document.getElementById('kindBadge').innerText = demo ? 'SIMULATED DEMO' : 'REAL ACCOUNT';
-            document.getElementById('pageTitle').innerText = demo ? 'Demo Account Deposit' : 'Real Account Deposit';
-            document.getElementById('pageNote').innerText = demo
-                ? 'Demo deposits add practice USD only. They are marked SIMULATED and never credit a real account.'
-                : 'Real deposit requests are stored as PENDING. They are not treated as actual payments and never change demo balances.';
-            document.getElementById('submitBtn').innerText = demo ? 'Simulate Demo Deposit' : 'Submit Real Deposit Request';
-            document.getElementById('submitBtn').className = 'deposit-btn' + (demo ? '' : ' real');
-            document.getElementById('histNote').innerText = demo ? 'All demo rows are SIMULATED.' : 'Real requests stay pending until processed separately. They are not simulated as paid.';
-        }
-
-        async function refresh() {
-            await api('/api/demo/session', { method: 'POST' });
-            if (mode === 'demo') {
+        async function loadDemo() {
+            try {
+                await api('/api/demo/session', { method: 'POST' });
                 const bal = await api('/api/demo/balance');
-                document.getElementById('balanceDisplay').innerText = '$' + Number(bal.balance_usd).toFixed(2) + ' USD';
-                document.getElementById('balanceDisplay').style.color = '#00b200';
+                document.getElementById('demoBal').innerText = '$' + Number(bal.balance_usd).toFixed(2);
                 const txs = await api('/api/demo/transactions');
-                document.getElementById('txBody').innerHTML = txs.transactions.map(t =>
+                document.getElementById('demoTxBody').innerHTML = txs.transactions.map(t =>
                     `<tr><td>${t.created_at.replace('T',' ').slice(0,19)}</td><td>${t.tx_type}</td><td>$${Number(t.amount_usd).toFixed(2)}</td><td class="sim">${t.status}</td></tr>`
                 ).join('') || '<tr><td colspan="4">No simulated transactions yet</td></tr>';
-            } else {
-                const bal = await api('/api/real/balance');
-                document.getElementById('balanceDisplay').innerText = '$' + Number(bal.balance_usd).toFixed(2) + ' USD';
-                document.getElementById('balanceDisplay').style.color = '#ffd700';
-                document.getElementById('txBody').innerHTML = '<tr><td colspan="4">Pending real requests are stored on the server and never marked as SIMULATED payments.</td></tr>';
-            }
+            } catch (e) { toast(e.message); }
         }
-
-        async function submitDeposit() {
-            const amount = document.getElementById('amount').value;
+        async function simulateDemoDeposit() {
             try {
-                if (mode === 'demo') {
-                    const data = await api('/api/demo/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount }) });
-                    toast('Successful demo deposit: $' + data.amount_usd + ' USD (SIMULATED). New demo balance $' + data.balance_usd);
-                } else {
-                    const data = await api('/api/real/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount }) });
-                    toast(data.message);
-                }
-                document.getElementById('amount').value = '';
-                await refresh();
-            } catch (e) {
-                toast(e.message);
+                const data = await api('/api/demo/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: document.getElementById('demoAmount').value }) });
+                toast('Successful demo deposit: $' + data.amount_usd + ' USD (SIMULATED)');
+                document.getElementById('demoAmount').value = '';
+                await loadDemo();
+            } catch (e) { toast(e.message); }
+        }
+        function selectMethod(method) {
+            currentMethod = method;
+            document.getElementById('sliderTrack').style.transform = 'translateX(-50%)';
+            const addressText = document.getElementById('addressText');
+            const addressWrapper = document.getElementById('addressWrapper');
+            const instructionText = document.getElementById('instructionText');
+            document.getElementById('voucherGroup').style.display = method === 'ott' ? 'block' : 'none';
+            if (walletAddresses[method]) {
+                addressText.innerText = walletAddresses[method];
+                addressWrapper.style.display = 'flex';
+                instructionText.innerText = `Please send the exact amount to the ${method.toUpperCase()} address below:`;
+            } else {
+                addressWrapper.style.display = 'none';
+                instructionText.innerText = `Please follow instructions for ${method.toUpperCase()}`;
             }
         }
-
-        render();
-        refresh().catch(err => toast(err.message));
+        function selectUsdtNetwork(net) {
+            closeUsdtModal();
+            currentMethod = net;
+            document.getElementById('sliderTrack').style.transform = 'translateX(-50%)';
+            document.getElementById('addressText').innerText = walletAddresses.usdt_trc20;
+            document.getElementById('addressWrapper').style.display = 'flex';
+            document.getElementById('instructionText').innerText = net === 'usdt_bep20'
+                ? "Please send USDT (BEP20) to the address below:"
+                : "Please send USDT (TRC20) to the address below:";
+        }
+        function goToStep(step) { if (step === 1) document.getElementById('sliderTrack').style.transform = 'translateX(0%)'; }
+        function openUsdtModal() { document.getElementById('usdtNetworkModal').style.display = 'flex'; }
+        function closeUsdtModal() { document.getElementById('usdtNetworkModal').style.display = 'none'; }
+        function openOthersModal() { document.getElementById('othersModal').style.display = 'flex'; }
+        function closeOthersModal() { document.getElementById('othersModal').style.display = 'none'; }
+        function copyAddress() {
+            navigator.clipboard.writeText(document.getElementById('addressText').innerText).then(() => alert('Address copied to clipboard!'));
+        }
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) document.getElementById('fileNameDisplay').innerText = input.files[0].name;
+        }
+        document.getElementById('othersList').innerHTML = others.map(name => `
+            <div class="method-row">
+                <div class="method-row-info"><span>${name}</span></div>
+                <a href="https://t.me/crashgamesHelp?text=${encodeURIComponent('Greetings I would like to deposit on my CrashGame using ' + name)}" target="_blank" class="buy-now-btn">DEPOSIT NOW</a>
+            </div>`).join('');
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('depositAmount').value;
+            try {
+                if (accountMode === 'demo') {
+                    const data = await api('/api/demo/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount }) });
+                    toast('Successful demo deposit: $' + data.amount_usd + ' USD (SIMULATED). This did not process a real payment.');
+                    await loadDemo();
+                    goToStep(1);
+                } else {
+                    const data = await api('/api/real/deposit', { method: 'POST', body: JSON.stringify({ amount_usd: amount, method: currentMethod }) });
+                    toast(data.message);
+                    goToStep(1);
+                }
+            } catch (err) { toast(err.message); }
+        });
+        setMode(accountMode);
     </script>
 </body>
 </html>

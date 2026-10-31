@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CrashGame -- M-Pesa Deposit Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Outfit:wght@400;600;800;900&amp;display=swap" rel="stylesheet">
+    <style>
+         :root {
+            --bg-base: #0b0e14;
+            --bg-surface: #131924;
+            --bg-card: #1a2232;
+            --bg-input: #0e131d;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-green: #10b981;
+            --accent-glow: rgba(0, 242, 254, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #8492a6;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(0, 242, 254, 0.5);
+            --error-red: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; touch-action: manipulation; }
+        body { background-color: var(--bg-base); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+        header { background: rgba(19, 25, 36, 0.85); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-glass); padding: 16px 32px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 10; }
+        .back-link { color: var(--accent-cyan); text-decoration: none; font-weight: 800; font-size: 13px; position: absolute; left: 20px; }
+        .nav-logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 900; color: #fff; text-decoration: none; }
+        .nav-logo img { height: 32px; width: auto; filter: drop-shadow(0 0 8px var(--accent-glow)); }
+        .main-wrapper { flex: 1; width: 100%; max-width: 600px; margin: 0 auto; padding: 24px 16px; position: relative; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 6px; text-align: center; }
+        p.subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; text-align: center; }
+        .amounts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .amount-card { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 16px; padding: 20px 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.25s ease; }
+        .amount-card:hover { border-color: var(--accent-cyan); transform: translateY(-2px); box-shadow: 0 4px 15px var(--accent-glow); }
+        .amount-logo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--accent-cyan); margin-bottom: 4px; }
+        .amount-title { font-size: 14px; font-weight: 800; color: #fff; text-align: center; }
+        .amount-sub { font-size: 10px; font-weight: 600; color: var(--accent-green); text-align: center; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(4, 7, 12, 0.75); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+        .modal-card { background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: slideUp 0.25s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+        .modal-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-muted); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .phone-input-wrapper { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-glass); border-radius: 12px; overflow: hidden; }
+        .phone-input-wrapper:focus-within { border-color: var(--border-active); }
+        .phone-prefix { padding: 14px 12px; font-weight: 800; font-size: 14px; color: var(--accent-cyan); border-right: 1px solid var(--border-glass); }
+        #phoneInput { flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-size: 15px; font-weight: 600; padding: 14px 12px; letter-spacing: 1px; }
+        .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+        .selected-amount-display { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; padding: 12px 14px; background: var(--bg-input); border-radius: 10px; font-size: 13px; }
+        .selected-amount-display .label { color: var(--text-muted); font-weight: 600; }
+        .selected-amount-display .value { font-weight: 800; color: var(--accent-cyan); font-size: 15px; }
+        #payBtn { width: 100%; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; border-radius: 12px; padding: 16px; font-size: 15px; font-weight: 800; color: #06121a; cursor: pointer; box-shadow: 0 4px 20px var(--accent-glow); }
+        #payBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .status-box { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; line-height: 1.5; }
+        .status-box.show { display: block; }
+        .status-box.loading { background: rgba(0, 242, 254, 0.08); border: 1px solid var(--border-active); color: var(--accent-cyan); }
+        .status-box.success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.5); color: var(--accent-green); }
+        .status-box.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.5); color: var(--error-red); }
+        .support-banner { background: rgba(19, 25, 36, 0.7); border: 1px solid var(--border-glass); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+        .support-info { display: flex; align-items: center; gap: 10px; }
+        .telegram-icon-wrapper { width: 32px; height: 32px; background: rgba(0, 136, 204, 0.15); border: 1px solid rgba(0, 136, 204, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .telegram-icon-wrapper img { width: 16px; height: 16px; object-fit: contain; }
+        .support-title { font-size: 12px; font-weight: 700; color: #fff; }
+        .support-sub { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+        .support-btn { background: #0088cc; color: #ffffff; text-decoration: none; font-size: 11px; font-weight: 800; padding: 8px 12px; border-radius: 8px; }
+        .account-switch { display: flex; gap: 6px; justify-content: center; margin-bottom: 16px; }
+        .acc-btn { border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-muted); font-size: 11px; font-weight: 800; padding: 8px 14px; border-radius: 10px; cursor: pointer; text-transform: uppercase; }
+        .acc-btn.active.demo-active { background: #10b981; color: #fff; }
+        .acc-btn.active.real-active { background: #ffd700; color: #000; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/deposit.html" class="back-link">&larr; Back</a>
+        <a href="/" class="nav-logo">
+            <img src="https://i.ibb.co/5WS8kMsY/4-F05-AFF4-AFC8-4-B60-9-F59-086-D08-FA8723.png" alt="CrashGame" /> CrashGame
+        </a>
+    </header>
+    <div class="main-wrapper">
+        <h2>M-Pesa Deposit</h2>
+        <p class="subtitle">Tap an amount below to deposit instantly via M-Pesa.</p>
+        <div class="account-switch">
+            <button class="acc-btn" id="accBtnDemo" onclick="setMode('demo')">Demo</button>
+            <button class="acc-btn" id="accBtnReal" onclick="setMode('real')">Real</button>
+        </div>
+        <div class="amounts-grid" id="amountsGrid"></div>
+        <div class="support-banner">
+            <div class="support-info">
+                <div class="telegram-icon-wrapper">
+                    <img src="https://cdn-icons-png.flaticon.com/128/2111/2111646.png" alt="Telegram" />
+                </div>
+                <div class="support-text-container">
+                    <span class="support-title">Need help with M-Pesa?</span>
+                    <span class="support-sub">Contact Customer Support instantly</span>
+                </div>
+            </div>
+            <a href="https://t.me/cryptorollero" target="_blank" class="support-btn">Support</a>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">M-Pesa Deposit</span>
+                <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+            </div>
+            <label class="form-label" for="phoneInput">M-Pesa Phone Number</label>
+            <div class="phone-input-wrapper">
+                <span class="phone-prefix">+254</span>
+                <input type="tel" id="phoneInput" inputmode="numeric" maxlength="10" placeholder="712345678" autocomplete="tel">
+            </div>
+            <p class="form-hint">Enter your Safaricom number, e.g. 712345678 or 0112345678.</p>
+            <div class="selected-amount-display">
+                <span class="label">Selected Amount</span>
+                <span class="value" id="selectedAmount">--</span>
+            </div>
+            <button id="payBtn">Deposit Now</button>
+            <div class="status-box" id="statusBox"></div>
+        </div>
+    </div>
+    <script>
+        const AMOUNTS = [500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000];
+        const MPESA_LOGO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK9btJTu-287FCOeK5xFZVt1cnFQnnBpQhG6pPrIry4Q&s=10";
+        const grid = document.getElementById("amountsGrid");
+        const modalOverlay = document.getElementById("modalOverlay");
+        const modalClose = document.getElementById("modalClose");
+        const phoneInput = document.getElementById("phoneInput");
+        const selectedAmountEl = document.getElementById("selectedAmount");
+        const payBtn = document.getElementById("payBtn");
+        const statusBox = document.getElementById("statusBox");
+        let selectedAmount = null;
+        let accountMode = localStorage.getItem('betrush_account_mode') || 'demo';
+
+        function setMode(mode) {
+            accountMode = mode;
+            localStorage.setItem('betrush_account_mode', mode);
+            document.getElementById('accBtnDemo').className = 'acc-btn' + (mode === 'demo' ? ' active demo-active' : '');
+            document.getElementById('accBtnReal').className = 'acc-btn' + (mode === 'real' ? ' active real-active' : '');
+        }
+        setMode(accountMode);
+
+        AMOUNTS.forEach(amount => {
+            const card = document.createElement("div");
+            card.className = "amount-card";
+            card.dataset.amount = amount;
+            card.innerHTML = `
+                <img src="${MPESA_LOGO}" alt="M-Pesa" class="amount-logo">
+                <div class="amount-title">KES ${amount.toLocaleString()}</div>
+                <div class="amount-sub">DEPOSIT NOW</div>
+            `;
+            card.addEventListener("click", () => {
+                selectedAmount = amount;
+                selectedAmountEl.textContent = "KES " + amount.toLocaleString();
+                statusBox.className = "status-box";
+                payBtn.disabled = phoneInput.value.length < 9;
+                openModal();
+            });
+            grid.appendChild(card);
+        });
+
+        function openModal() {
+            modalOverlay.classList.add("open");
+            document.body.style.overflow = "hidden";
+            setTimeout(() => phoneInput.focus(), 250);
+        }
+        function closeModal() {
+            modalOverlay.classList.remove("open");
+            document.body.style.overflow = "";
+            statusBox.className = "status-box";
+            phoneInput.value = "";
+            selectedAmount = null;
+        }
+        modalClose.addEventListener("click", closeModal);
+        modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && modalOverlay.classList.contains("open")) closeModal();
+        });
+        phoneInput.addEventListener("input", () => {
+            phoneInput.value = phoneInput.value.replace(/\D/g, "");
+            payBtn.disabled = phoneInput.value.length < 9;
+        });
+        function normalizePhone(raw) {
+            let p = raw.replace(/\D/g, "");
+            if (p.startsWith("0")) p = "254" + p.slice(1);
+            else if (p.startsWith("7") || p.startsWith("1")) p = "254" + p;
+            return p;
+        }
+        function isValidPhone(p) { return /^254(7|1)\d{8}$/.test(p); }
+        function showStatus(type, message) {
+            statusBox.className = "status-box show " + type;
+            statusBox.textContent = message;
+        }
+        payBtn.addEventListener("click", async () => {
+            const phone = normalizePhone(phoneInput.value);
+            if (!isValidPhone(phone)) {
+                showStatus("error", "Invalid phone number. Use format 07XX or 01XX followed by 7 digits.");
+                return;
+            }
+            if (accountMode === "demo") {
+                showStatus("error", "M-Pesa STK is a real payment. It cannot update demo balances. Switch to Real, or use a SIMULATED USD deposit on the deposit page.");
+                return;
+            }
+            payBtn.disabled = true;
+            showStatus("loading", "Sending STK push to " + phone + "... Check your phone and enter your M-Pesa PIN.");
+            try {
+                const res = await fetch("/api/payhero/stk-push", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        phone_number: phone,
+                        amount: selectedAmount,
+                        account_mode: "real"
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showStatus("success",
+                        "STK push sent! Enter your M-Pesa PIN on your phone to complete the KES " +
+                        selectedAmount.toLocaleString() + " deposit. Balance is not treated as a simulated demo payment."
+                    );
+                } else {
+                    showStatus("error", data.message || "Failed to initiate payment. Please try again.");
+                    payBtn.disabled = false;
+                }
+            } catch (err) {
+                showStatus("error", "Network error. Please check your connection and try again.");
+                payBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
